@@ -1701,8 +1701,11 @@ static int ec_probe(struct usb_interface *interface,
 		}
 		dev_info(&interface->dev,
 			 "Embedded Controller now attached to /dev/mcu%d\n",
+#ifdef CONFIG_USB_DYNAMIC_MINORS
 			 interface->minor);
-
+#else
+			 interface->minor - mcu_class.minor_base);
+#endif
 		/* can over usb protocol init */
 		init_completion(&ec->hold);
 		mutex_init(&ec->cou.mutex);
@@ -1792,6 +1795,9 @@ static void ec_disconnect(struct usb_interface *interface)
 	usb_deregister_dev(interface, &ec_class);
 	/* decrement our usage count */
 	kref_put(&ec->kref, ec_delete);
+#ifndef CONFIG_USB_DYNAMIC_MINORS
+	ec_minor -= ec_class.minor_base;
+#endif
 	dev_info(&interface->dev, "/dev/mcu%d now disconnected\n", ec_minor);
 }
 
