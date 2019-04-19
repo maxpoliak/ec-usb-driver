@@ -498,13 +498,16 @@ static int ring_buff_user_read_packet(ring_pckt_buff_t *ring_buff,
  * Return: pointer to the created handlers structure
  * NULL_PTR - could not allocate memory
  */
-static struct cb_data* msg_cb_add(struct cb_list *cb,
+static struct cb_data* msg_cb_add(struct process_context *context,
+				  struct cb_list *cb,
 				  msg_cb_t new_msg_cb,
-				  sig_cb_t new_sig_cb,
-				  void *context )
+				  sig_cb_t new_sig_cb)
 {
 	struct cb_data *new_cb_handler;
-	new_cb_handler = kzalloc(sizeof(struct cb_data), GFP_KERNEL);
+
+	new_cb_handler = devm_kzalloc(&context->ec->usb_dev->dev,
+				      sizeof(struct cb_data),
+				      GFP_KERNEL);
 	if (!new_cb_handler)
 		return NULL;
 
@@ -529,12 +532,14 @@ static struct cb_data* msg_cb_add(struct cb_list *cb,
  * Delete the specified structure (old_hndl_cb) with callbacks from the cb
  * list
  */
-static void msg_cb_del(struct cb_list *cb, struct cb_data *old_hndl_cb)
+static void msg_cb_del(struct process_context *context,
+		       struct cb_list *cb,
+		       struct cb_data *old_hndl_cb)
 {
 	write_lock(&cb->list_lock);
 	list_del(&old_hndl_cb->list);
 	write_unlock(&cb->list_lock);
-	kfree(old_hndl_cb);
+	devm_kfree(&context->ec->usb_dev->dev, old_hndl_cb);
 }
 
 /**
@@ -1057,12 +1062,6 @@ static void ec_delete(struct kref *kref)
 		ec->ep_bulk_out.desc = NULL;
 	}
 
-	if (!ec->ep_bulk_in.desc) {
-		if (!ec->ep_bulk_in.buff)
-			kfree(ec->ep_bulk_in.buff);
-		ec->ep_bulk_in.desc = NULL;
-	}
-
 	if (!ec->ep_int_in.desc) {
 		/* deactivate dma buffer */
 		if (!ec->ep_int_in.buff) {
@@ -1078,7 +1077,6 @@ static void ec_delete(struct kref *kref)
 	usb_put_dev(ec->usb_dev);
 	schedule_timeout_interruptible(msecs_to_jiffies(EC_REMOVE_WAIT_MS));
 	EC_WARN(" ...done!\n");
-	kfree(ec);
 }
 
 /**
@@ -1111,7 +1109,9 @@ static int ec_open(struct inode *inode, struct file *file)
 		return -ENODEV;
 	}
 
-	proc_context = kzalloc(sizeof(struct process_context), GFP_KERNEL);
+	proc_context = devm_kzalloc(&ec->usb_dev->dev,
+				    sizeof(struct process_context),
+				    GFP_KERNEL);
 	if (!proc_context) {
 		/* error with alloc */
 		mutex_unlock(&usb_dev_mutex);
@@ -1124,14 +1124,14 @@ static int ec_open(struct inode *inode, struct file *file)
 	proc_context->flags = 0;
 	init_waitqueue_head(&proc_context->event);
 	/* register callbacks for this process */
-	proc_context->cb_data = msg_cb_add(&ec->cb_list,
+	proc_context->cb_data = msg_cb_add(proc_context,
+					   &ec->cb_list,
 					   ec_usb_data_arrived_impl,
-					   ec_usb_signal_impl,
-					   proc_context);
+					   ec_usb_signal_impl);
 	if (!proc_context->cb_data) {
 		mutex_unlock(&usb_dev_mutex);
 		EC_ERR("Error when registering a callback!\n");
-		kfree(proc_context);
+		devm_kfree(&ec->usb_dev->dev, proc_context);
 		return -ENOMEM;
 	}
 
@@ -1158,8 +1158,8 @@ static int ec_release(struct inode *inode, struct file *file)
 	proc_context = (struct process_context*)file->private_data;
 	ec = proc_context->ec;
 
-	msg_cb_del(&ec->cb_list, proc_context->cb_data);
-	kfree(proc_context);
+	msg_cb_del(proc_context, &ec->cb_list, proc_context->cb_data);
+	devm_kfree(&ec->usb_dev->dev, proc_context);
 	file->private_data = NULL;
 
 	mutex_unlock(&usb_dev_mutex);
@@ -1557,7 +1557,7 @@ static int ec_usb_ep_bulk_in_init(struct usb_device *usb_dev,
 	 *  of the hardware buffer on the usb side of the device
 	 */
 	ep->buff_size = ep_desc->wMaxPacketSize;
-	ep->buff = (u8*)kzalloc(ep->buff_size, GFP_KERNEL);
+	ep->buff = (u8*)devm_kzalloc(&usb_dev->dev, ep->buff_size, GFP_KERNEL);
 	if (!ep->buff)
 		return -ENOMEM;
 	/* configure recieve pipe */
@@ -1610,10 +1610,14 @@ static int ec_probe(struct usb_interface *interface,
 	struct ec_dev *ec = NULL;
 	struct usb_host_interface *iface_desc;
 	struct usb_endpoint_descriptor *ep_descriptor;
+	struct usb_device *new_usb_dev;
 	int i, rv = -ENOMEM;
 
+	new_usb_dev = usb_get_dev(interface_to_usbdev(interface));
 	dev_info(&interface->dev, "Probe ec device!\n");
-	ec = (struct ec_dev*) kzalloc(sizeof(struct ec_dev), GFP_KERNEL);
+	ec = (struct ec_dev*) devm_kzalloc(&new_usb_dev->dev,
+					   sizeof(struct ec_dev),
+					   GFP_KERNEL);
 	do {
 		if (!ec) {
 			/* error with allocate */
@@ -1627,7 +1631,7 @@ static int ec_probe(struct usb_interface *interface,
 		kref_init(&ec->kref);
 
 		/* init usb device parameters */
-		ec->usb_dev = usb_get_dev(interface_to_usbdev(interface));
+		ec->usb_dev = new_usb_dev;
 		ec->interface = interface;
 		iface_desc = interface->cur_altsetting;
 		dev_info(&interface->dev,
