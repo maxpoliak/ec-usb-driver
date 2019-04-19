@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */   
+ */
 
 #include <asm/atomic.h>
 #include <linux/sched.h>
@@ -43,9 +43,9 @@
 #include <linux/types.h>
 
 /* Driver magic word for receive control commands from user space */
-#define EC_USB_MINOR 192
-#define EC_DRIVER_NAME "bmc_mcu"
-#define DRIVER_VERSION "Embedded Controller Driver v1.0"
+#define EC_USB_MINOR	192
+#define EC_DRIVER_NAME	"bmc_mcu"
+#define DRIVER_VERSION	"Embedded Controller Driver v1.0"
 
 /* IOCTL commands for this driver */
 enum {
@@ -56,89 +56,88 @@ enum {
 	MAX_LIMIT_EC_GROUP
 };
 
-#define EC_CAN_CTRL _IOWR(EC_USB_MINOR, EC_CAN_CTRL_ID, \
-        	unsigned int)
-#define EC_SERV_TIMEOUT_GET _IOR(EC_USB_MINOR, GET_TIMEOUT_ID, int*)
-#define EC_SERV_TIMEOUT_SET _IOWR(EC_USB_MINOR, SET_TIMEOUT_ID, int)
-#define EC_HBP_CAN_FLTR_SET _IOWR(EC_USB_MINOR, FLTR_HDR_ID, u32)
+#define EC_CAN_CTRL	_IOWR(EC_USB_MINOR, EC_CAN_CTRL_ID, unsigned int)
+#define EC_SERV_TIMEOUT_GET	_IOR(EC_USB_MINOR, GET_TIMEOUT_ID, int*)
+#define EC_SERV_TIMEOUT_SET	_IOWR(EC_USB_MINOR, SET_TIMEOUT_ID, int)
+#define EC_HBP_CAN_FLTR_SET	_IOWR(EC_USB_MINOR, FLTR_HDR_ID, u32)
 
 /* Macro for system events */
-#define SND_MSG_EVENT(c, event) set_bit((int)event, (void*)&c->flags)
-#define TST_MSG_EVENT(c, event) test_bit((int)event, (void*)&c->flags)
-#define CLR_MSG_EVENT(c, event) clear_bit((int)event, (void*)&c->flags)
-#define INVALID_DESC_EVENT(ev) (ev >= MAX_NUM_EVENT);
+#define SND_MSG_EVENT(c, event)	set_bit((int)event, (void*)&c->flags)
+#define TST_MSG_EVENT(c, event)	test_bit((int)event, (void*)&c->flags)
+#define CLR_MSG_EVENT(c, event)	clear_bit((int)event, (void*)&c->flags)
+#define INVALID_DESC_EVENT(ev)	(ev >= MAX_NUM_EVENT);
 
 /* The delay before removing the main device structure in ms */
-#define EC_REMOVE_WAIT_MS 100
+#define EC_REMOVE_WAIT_MS	100
 
 /* If the ring buffer is full, the system pauses */
-#define EC_RING_BUFFER_PAUSE_US 560
+#define EC_RING_BUFFER_PAUSE_US	560
 
 /* Macro to get dev struct pointer from current Kref */
-#define TO_EC_DEV(d) container_of(d, struct ec_dev, kref)
+#define TO_EC_DEV(d)	container_of(d, struct ec_dev, kref)
 
 /* Size of attr header in COU packet */
-#define COU_ATTR_HEADER_SIZE 4
+#define COU_ATTR_HEADER_SIZE	4
 
 /* Size of data in COU packet */
-#define COU_DATA_SIZE 8
-#define COU_BYTES_NUM COU_DATA_SIZE
+#define COU_DATA_SIZE	8
+#define COU_BYTES_NUM	COU_DATA_SIZE
 
 /* Size of all COU packet */
-#define COU_PACKET_SIZE (COU_DATA_SIZE + COU_ATTR_HEADER_SIZE)
+#define COU_PACKET_SIZE	(COU_DATA_SIZE + COU_ATTR_HEADER_SIZE)
 
 /* Packet engine completion timeout */
-#define COU_ENGINE_TIMEOUT_MS 5
+#define COU_ENGINE_TIMEOUT_MS	5
 
 /* Period of block interrupt request (us) */
-#define INTERRUPT_URB_PERIOD_US 20
+#define INTERRUPT_URB_PERIOD_US	20
 
 /* Service timeout to read packet from bulk-in ep mcu (ms) */
-#define SERVICE_TIMEOUT_MIN 50
-#define SERVICE_TIMEOUT 500
-#define SERVICE_TIMEOUT_MAX 5000
+#define SERVICE_TIMEOUT_MIN	50
+#define SERVICE_TIMEOUT		500
+#define SERVICE_TIMEOUT_MAX	5000
 
 /* Statistics */
-#define STAT_BUF_SIZE 400
-#define STAT_INTERVAL_UPDATE 1000
+#define STAT_BUF_SIZE		400
+#define STAT_INTERVAL_UPDATE	1000
 
 /* Macro of mask for reserved bits */
-#define MASK_RES_BITS (0x1F << 11 | 0x7)
-#define MASK_SRV_RES_BITS 0x7
+#define MASK_RES_BITS		(0x1F << 11 | 0x7)
+#define MASK_SRV_RES_BITS	0x7
 
 /* Ring packet buffer */
-#define CIRCULAR_NUM_ENTRY 1024
-#define CONTEXT_PCKT_BUF_SIZE 12
-#define CNTR_BOUNDARIES(c)                 \
-        do {                               \
-        	if ((c) >= CIRCULAR_NUM_ENTRY) \
-        		(c) = 0;                   \
-        } while (0)
+#define CIRCULAR_NUM_ENTRY	1024
+#define CONTEXT_PCKT_BUF_SIZE	12
+#define CNTR_BOUNDARIES(c)			\
+	do {					\
+		if ((c) >= CIRCULAR_NUM_ENTRY)	\
+			(c) = 0;		\
+	} while (0)
 
-#define MOVE_POSITION(c)        \
-        do {                    \
-            ++(c);              \
-            CNTR_BOUNDARIES(c); \
-        } while (0)
+#define MOVE_POSITION(c)		\
+	do {				\
+		++(c);			\
+		CNTR_BOUNDARIES(c);	\
+	} while (0)
 
 /* Macros to display log-info in console or log-file */
-#define LOG_BANER "[ ec ]: "
-#define EC_ERR( s, args... ) printk( KERN_ERR LOG_BANER s, ##args )
-#define EC_WARN( s, args... ) printk( KERN_WARNING LOG_BANER s, ##args )
-#define EC_PRINT_USB_EP_PARAM(pendp, param, buff)                    \
-        do {                                                         \
-                buff = pendp->param;                                 \
-                printk(KERN_INFO "         "#param" = %d \n", buff); \
-        } while (0)
+#define LOG_BANER	"[ ec ]: "
+#define EC_ERR(s, args...)	printk(KERN_ERR LOG_BANER s, ##args)
+#define EC_WARN(s, args...)	printk(KERN_WARNING LOG_BANER s, ##args)
+#define EC_PRINT_USB_EP_PARAM(pendp, param, buff)			\
+	do {								\
+		buff = pendp->param,					\
+		printk(KERN_INFO "         "#param" = %d \n", buff);	\
+	} while (0)
 
 #ifdef SET_LOG
-#define EC_LOG( s, args... ) printk( KERN_INFO LOG_BANER s, ##args )
-#define EC_INFO( s, args... ) printk( KERN_INFO LOG_BANER s, ##args )
-#define EC_GDB( s, args... ) printk( KERN_DEBUG LOG_BANER s, ##args )
+#define EC_LOG(s, args...)	printk(KERN_INFO LOG_BANER s, ##args)
+#define EC_INFO(s, args...)	printk(KERN_INFO LOG_BANER s, ##args)
+#define EC_GDB(s, args...)	printk(KERN_DEBUG LOG_BANER s, ##args)
 #else
-#define EC_LOG( s, args... ) {}
-#define EC_INFO( s, args... ) {}
-#define EC_GDB( s, args... ) {}
+#define EC_LOG(s, args...)	{}
+#define EC_INFO(s, args...)	{}
+#define EC_GDB(s, args...)	{}
 #endif /* SET_LOG */
 
 /* Signal descriptor */
@@ -201,15 +200,15 @@ struct cb_data {
 
 /**
  * struct cou_stat - the COU statistics structure
- * @pckt_rcv:  all received packets
- * @pckt_snd:  all sent packets
- * @bytes_rcv:  all received bytes
- * @bytes_snd:	all sent bytes
- * @pps_rcv:  packet per second was received
- * @pps_snd:  packet per second was sent
- * @bps_rcv:  bytes per second was received
- * @bps_snd:  bytes per second was sent
- * @drop_pckt:  packet was drop
+ * @pckt_rcv:    all received packets
+ * @pckt_snd:    all sent packets
+ * @bytes_rcv:   all received bytes
+ * @bytes_snd:   all sent bytes
+ * @pps_rcv:     packet per second was received
+ * @pps_snd:     packet per second was sent
+ * @bps_rcv:     bytes per second was received
+ * @bps_snd:     bytes per second was sent
+ * @drop_pckt:   packet was drop
  * @lost_bytes:  bytes was lost
  */
 struct cou_stat {
@@ -239,12 +238,12 @@ struct cou_stat {
  * @driver_data:         driver-specific callback argument
  * @pckt_proc:
  * @stat_proc:
- * @statistics:	         statistics
- * @stat_pckt_rcv_cnt:	 counter of received packets
- * @stat_pckt_snd_cnt:	 counter of sent packets
- * @stat_bytes_rcv_cnt:	 counter of received bytes
- * @stat_bytes_snd_cnt:	 counter of sent bytes
- * @stat_pckt_drop_cnt:	 counter of drop packets
+ * @statistics:          statistics
+ * @stat_pckt_rcv_cnt:   counter of received packets
+ * @stat_pckt_snd_cnt:   counter of sent packets
+ * @stat_bytes_rcv_cnt:  counter of received bytes
+ * @stat_bytes_snd_cnt:  counter of sent bytes
+ * @stat_pckt_drop_cnt:  counter of drop packets
  * @stat_bytes_lost_cnt: counter of drop bytes
  */
 struct cou_data {
@@ -376,8 +375,8 @@ static bool ring_buff_is_full(ring_pckt_buff_t* ring_buff )
  *
  * Returns true if the values match or false otherwise.
  */
-static bool ring_buff_look_up_u32(ring_pckt_buff_t *ring_buff, 
-                                  u32 hdr, 
+static bool ring_buff_look_up_u32(ring_pckt_buff_t *ring_buff,
+                                  u32 hdr,
                                   u32 mask)
 {
 	while (!ring_buff_is_empty(ring_buff)) {
@@ -408,8 +407,8 @@ static bool ring_buff_look_up_u32(ring_pckt_buff_t *ring_buff,
  * 0 - no errors
  */
 static int ring_buff_write_packet(ring_pckt_buff_t *ring_buff,
-                                  void *write_from,
-                                  u8 size)
+				  void *write_from,
+				  u8 size)
 {
 	if (size > CONTEXT_PCKT_BUF_SIZE)
 		return  -EINVAL;
@@ -437,8 +436,8 @@ static int ring_buff_write_packet(ring_pckt_buff_t *ring_buff,
  * 0 - no errors
  */
 static int ring_buff_read_packet(ring_pckt_buff_t *ring_buff,
-                                 void *read_to,
-                                 u8 *count)
+				 void *read_to,
+				 u8 *count)
 {
 	if (ring_buff_is_empty(ring_buff))
 		return -ENOBUFS;
@@ -466,12 +465,12 @@ static int ring_buff_read_packet(ring_pckt_buff_t *ring_buff,
  * 0 - no errors
  */
 static int ring_buff_user_read_packet(ring_pckt_buff_t *ring_buff,
-                                      void __user *read_to_user,
-                                      u8 *count )
+				      void __user *read_to_user,
+				      u8 *count )
 {
 	int rv = 0;
 	if (ring_buff_is_empty(ring_buff)) {
-		EC_ERR( "Ring buffer is empty!\n" );
+		EC_ERR("Ring buffer is empty!\n");
 		return -ENOBUFS;
 	}
 
@@ -500,9 +499,9 @@ static int ring_buff_user_read_packet(ring_pckt_buff_t *ring_buff,
  * NULL_PTR - could not allocate memory
  */
 static struct cb_data* msg_cb_add(struct cb_list *cb,
-                                  msg_cb_t new_msg_cb,
-                                  sig_cb_t new_sig_cb,
-                                  void *context )
+				  msg_cb_t new_msg_cb,
+				  sig_cb_t new_sig_cb,
+				  void *context )
 {
 	struct cb_data *new_cb_handler;
 	new_cb_handler = kzalloc(sizeof(struct cb_data), GFP_KERNEL);
@@ -563,8 +562,8 @@ static int msg_cb_rcv_pckt_engine(struct cb_list *cb, void *pckt_buf, u8 size)
 		hndl_cb_entry = list_entry(iter, struct cb_data, list);
 		if (hndl_cb_entry->msg_cb) {
 			rv = hndl_cb_entry->msg_cb(pckt_buf,
-			                           size,
-			                           hndl_cb_entry->proc_context_data);
+					size,
+					hndl_cb_entry->proc_context_data);
 			if (rv == -ENOBUFS)
 				all_rv |= rv;
 			else if (rv == -ENODEV) {
@@ -604,7 +603,7 @@ static int cou_packet_rcv_process(void *arg)
 	u32 *raw_packet_header;
 	int size = 0;
 
-	EC_LOG( "Start cou_packet_rcv_process!\n" );
+	EC_LOG("Start cou_packet_rcv_process!\n");
 	while(!kthread_should_stop()) {
 		/*
 		 *  packet waiting timeout can be set from user space.
@@ -613,18 +612,19 @@ static int cou_packet_rcv_process(void *arg)
 		 */
 		timeout = atomic_read(&cou->a_servise_timeout);
 		rv = usb_bulk_msg(ec->usb_dev,
-		                  ec->ep_bulk_in.pipe,
-		                  ec->ep_bulk_in.buff,
-		                  ec->ep_bulk_in.buff_size,
-		                  &size,
-		                  timeout);
+				  ec->ep_bulk_in.pipe,
+				  ec->ep_bulk_in.buff,
+				  ec->ep_bulk_in.buff_size,
+				  &size,
+				  timeout);
 		switch( rv ) {
 		case 0:
-			if ((size > COU_PACKET_SIZE) || (size < COU_ATTR_HEADER_SIZE)) {
+			if ((size > COU_PACKET_SIZE) ||
+			    (size < COU_ATTR_HEADER_SIZE)) {
 				/* the packet size is not valid */
 				atomic_inc(&cou->stat_pckt_drop_cnt);
 				atomic_add(size, &cou->stat_bytes_lost_cnt);
-				EC_ERR( "The packet is not valid!\n" );
+				EC_ERR("The packet is not valid!\n");
 				continue;
 			}
 
@@ -633,12 +633,13 @@ static int cou_packet_rcv_process(void *arg)
 			*raw_packet_header |= MASK_RES_BITS;
 
 			rv = msg_cb_rcv_pckt_engine(&ec->cb_list,
-                                                    ec->ep_bulk_in.buff,
-                                                    (u8)size);
+						    ec->ep_bulk_in.buff,
+						    (u8)size);
 			if (rv) {
 				atomic_inc(&cou->stat_pckt_drop_cnt);
 				atomic_add(size, &cou->stat_bytes_lost_cnt);
-				EC_ERR("Callbacks have occurred with errors!\n");
+				EC_ERR("Callbacks have occurred"
+						"with errors!\n");
 				break;
 			}
 			/* update statistics */
@@ -657,24 +658,24 @@ static int cou_packet_rcv_process(void *arg)
 		case -ENOENT:
 		case -EILSEQ:
 			EC_ERR("MCU device is not responding! rv = %d\n", rv);
-			EC_INFO("Exit from cou_packet_rcv_process!\n" );
-			return  -ENODEV;
+			EC_INFO("Exit from cou_packet_rcv_process!\n");
+			return -ENODEV;
 
 		case -EPROTO:
-			EC_ERR( "USB protocol error! rv = %d\n", rv );
+			EC_ERR("USB protocol error! rv = %d\n", rv);
 			break;
 
 		default:
-			EC_ERR( "unknown status received: rv = %d\n", rv );
+			EC_ERR("unknown status received: rv = %d\n", rv);
 			break;
 
 		} /* end switch( rv ) */
 
 	} /* end while( !kthread_should_stop() ... */
 
-	EC_INFO( "Exit from cou_packet_rcv_process!\n" );
+	EC_INFO("Exit from cou_packet_rcv_process!\n");
 	cou->pckt_proc = NULL;
-	return  0;
+	return 0;
 }
 
 /**
@@ -685,11 +686,11 @@ static void cou_data_transfer_complete(struct urb *urb)
 	int status = urb->status;
 	struct ec_dev *ec = (struct ec_dev*) urb->context;
 
-	if (status && !(status == -ENOENT     ||
-	                status == -ECONNRESET ||
-	                status == -ESHUTDOWN)) {
+	if (status && !(status == -ENOENT ||
+			status == -ECONNRESET ||
+			status == -ESHUTDOWN)) {
 		/* sync/async unlink faults aren't errors */
-		EC_ERR( "nonzero write bulk status received: %d\n", status );
+		EC_ERR("nonzero write bulk status received: %d\n", status);
 	}
 	complete(&ec->hold);
 }
@@ -716,9 +717,9 @@ static void cou_data_transfer_complete(struct urb *urb)
  * and URB error status
  */
 static int cou_packet_engine(struct ec_dev *ec,
-                             void *raw_packet,
-                             u8 size,
-                             unsigned long jiffies_wait)
+			     void *raw_packet,
+			     u8 size,
+			     unsigned long jiffies_wait)
 {
 	int rv;
 	struct cou_data *cou = &ec->cou;
@@ -727,7 +728,8 @@ static int cou_packet_engine(struct ec_dev *ec,
 
 	if ((size > COU_PACKET_SIZE) || (size < COU_ATTR_HEADER_SIZE)) {
 		/* the packet size is not valid */
-		EC_ERR( "The packet header is not valid size = %i!\n",(int)size );
+		EC_ERR("The packet header is not valid size = %i!\n",
+		       (int)size);
 		return -EINVAL;
 	}
 	rv = mutex_lock_interruptible(&cou->mutex);
@@ -758,7 +760,8 @@ static int cou_packet_engine(struct ec_dev *ec,
 
 		/* to block process for waiting completion from callback */
 		compl_timeout = msecs_to_jiffies(COU_ENGINE_TIMEOUT_MS);
-		rv = wait_for_completion_interruptible_timeout(&ec->hold, compl_timeout);
+		rv = wait_for_completion_interruptible_timeout(&ec->hold,
+							       compl_timeout);
 		if (rv <= 0) {
 			/* timeout or interruptible from signal */
 			rv = rv ? -ERESTARTSYS : -ETIMEDOUT;
@@ -818,7 +821,7 @@ static int cou_stat_upd_process(void *context)
 	unsigned long timeout;
 	int rv = 0;
 
-	EC_INFO( "Start cou_stat_upd_process!\n" );
+	EC_INFO("Start cou_stat_upd_process!\n");
 	while(!kthread_should_stop()) {
 		/* 1 sec soft delay */
 		timeout = msecs_to_jiffies(STAT_INTERVAL_UPDATE);
@@ -828,7 +831,7 @@ static int cou_stat_upd_process(void *context)
 			break;
 		cou_stat_pps_bps_update(cou);
 	}
-	EC_INFO( "Stop cou_stat_upd_process!\n" );
+	EC_INFO("Stop cou_stat_upd_process!\n");
 	cou->stat_proc = NULL;
 	return rv;
 }
@@ -844,7 +847,8 @@ static int cou_stat_upd_process(void *context)
  */
 static int cou_srv_timeout_set(struct cou_data *cou, unsigned int timeout)
 {
-	if ((timeout < SERVICE_TIMEOUT_MIN) || (timeout > SERVICE_TIMEOUT_MAX)) {
+	if ((timeout < SERVICE_TIMEOUT_MIN) ||
+	    (timeout > SERVICE_TIMEOUT_MAX)) {
 		EC_ERR("Invalid timeout value! rv = %d\n", timeout);
 		return -EINVAL;
 	}
@@ -876,28 +880,28 @@ static ssize_t cou_stat_get(struct cou_data *cou, char *buf, size_t size)
 	struct cou_stat statistics;
 	memcpy(&statistics, &cou->statistics, sizeof(struct cou_stat));
 	return snprintf(buf,
-	                size,
-	                "received:   %llu bytes\n"
-	                "            %llu packets\n"
-	                "            %llu bps\n"
-	                "            %llu pps\n"
-	                "sent:       %llu bytes\n"
-	                "            %llu packets\n"
-	                "            %llu bps\n"
-	                "            %llu pps\n"
-	                "lost:       %llu bytes\n"
-	                "            %llu packets\n\n"
-	                "waiting to be sent:\n",
-	                statistics.bytes_rcv,
-	                statistics.pckt_rcv,
-	                statistics.bps_rcv,
-	                statistics.pps_rcv,
-	                statistics.bytes_snd,
-	                statistics.pckt_snd,
-	                statistics.bps_snd,
-	                statistics.pps_snd,
-	                statistics.lost_bytes,
-	                statistics.drop_pckt);
+			size,
+			"received:   %llu bytes\n"
+			"            %llu packets\n"
+			"            %llu bps\n"
+			"            %llu pps\n"
+			"sent:       %llu bytes\n"
+			"            %llu packets\n"
+			"            %llu bps\n"
+			"            %llu pps\n"
+			"lost:       %llu bytes\n"
+			"            %llu packets\n\n"
+			"waiting to be sent:\n",
+			statistics.bytes_rcv,
+			statistics.pckt_rcv,
+			statistics.bps_rcv,
+			statistics.pps_rcv,
+			statistics.bytes_snd,
+			statistics.pckt_snd,
+			statistics.bps_snd,
+			statistics.pps_snd,
+			statistics.lost_bytes,
+			statistics.drop_pckt);
 }
 
 /**
@@ -918,7 +922,8 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
 {
 	int rv, ev;
 	unsigned long cb_context_buff_full_timeout;
-	struct process_context *context = (struct process_context*)user_proc_context;
+	struct process_context *context =
+			(struct process_context*)user_proc_context;
 
 	if (ring_buff_is_full(&context->ring_buff)) {
 		/*
@@ -926,12 +931,16 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
 		 *  the system pauses to allow the application a little more
 		 *  time to process the received packets
 		 */
-		cb_context_buff_full_timeout = usecs_to_jiffies(EC_RING_BUFFER_PAUSE_US);
-		EC_ERR("Ring buffer is full! Pause %d us!\n", EC_RING_BUFFER_PAUSE_US);
+		cb_context_buff_full_timeout =
+				usecs_to_jiffies(EC_RING_BUFFER_PAUSE_US);
+
+		EC_ERR("Ring buffer is full! Pause %d us!\n",
+				EC_RING_BUFFER_PAUSE_US);
+
 		rv = wait_event_interruptible_timeout(
-		         context->event,
-		         (ev = TST_MSG_EVENT(context, DISCONNECT_DEV)),
-		         cb_context_buff_full_timeout);
+				context->event,
+				(ev = TST_MSG_EVENT(context, DISCONNECT_DEV)),
+				cb_context_buff_full_timeout);
 		if (ev)
 			return -ENODEV;
 		rv = 0;
@@ -943,8 +952,8 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
 	rv = ring_buff_write_packet(&context->ring_buff, usb_ep_buf, size);
 	if (rv == -ENOBUFS) {
 		/* packet ring buffer is full */
-		EC_WARN("Write packet to local context buffer is failed. "
-		        "Ring buffer is full!\n");
+		EC_WARN("Write packet to local context buffer is failed."
+				"Ring buffer is full!\n");
 	}
 	SND_MSG_EVENT(context, RECEIVE_PACKET);
 	wake_up_interruptible(&context->event);
@@ -956,7 +965,8 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
  */
 static int ec_usb_signal_impl(u32 event_type, void *user_proc_context)
 {
-	struct process_context *context = (struct process_context *) user_proc_context;
+	struct process_context *context =
+			(struct process_context *) user_proc_context;
 	SND_MSG_EVENT(context, event_type);
 	wake_up_interruptible(&context->event);
 	return 0;
@@ -983,13 +993,13 @@ static int hbp_filter_passed(struct process_context *self, u8 *cou_packet)
 			rv = -EINPROGRESS;
 			if (!cou_packet) {
 				/* use header based filter */
-				if (ring_buff_look_up_u32(&self->ring_buff, 
-				                          packet_hdr, 
-				                          mask)) 
+				if (ring_buff_look_up_u32(&self->ring_buff,
+							  packet_hdr,
+							  mask))
 					ring_buff_read_packet(&self->ring_buff,
-					                      cou_packet,
-					                      &packet_size);
-				else 
+							      cou_packet,
+							      &packet_size);
+				else
 					/* no matches found */
 					rv = 0;
 			}
@@ -1009,15 +1019,16 @@ static int hbp_filter_wait_packet_timeout(struct process_context *self,
 	int rv, ev = 0;
 	if (jiffies_wait) {
 		/* wait with timeout */
-		rv = wait_event_interruptible_timeout(self->event,
-		                                      (ev = hbp_filter_passed(self,
-		                                                              packet)),
-		                                      jiffies_wait);
+		rv = wait_event_interruptible_timeout(
+				self->event,
+				(ev = hbp_filter_passed(self, packet)),
+				jiffies_wait);
 		if (rv <= 0)
 			return rv ? -ERESTARTSYS : -ETIMEDOUT;
 	} else {
-		rv = wait_event_interruptible(self->event,
-		                              (ev = hbp_filter_passed(self, packet)));
+		rv = wait_event_interruptible(
+					self->event,
+					(ev = hbp_filter_passed(self,packet)));
 		if (rv)
 			return -ERESTARTSYS;
 	}
@@ -1033,14 +1044,14 @@ static void ec_delete(struct kref *kref)
 {
 	struct ec_dev *ec  = TO_EC_DEV(kref);
 
-	EC_INFO( "Delete device from devfs table!...");
+	EC_INFO("Delete device from devfs table!...");
 	if (!ec->ep_bulk_out.desc) {
 		if (!ec->ep_bulk_out.buff) {
 			/* free up allocated buffer */
 			usb_free_coherent(ec->usb_dev,
-			                  ec->ep_bulk_out.buff_size,
-			                  ec->ep_bulk_out.buff,
-			                  ec->ep_bulk_out.urb->transfer_dma);
+					  ec->ep_bulk_out.buff_size,
+					  ec->ep_bulk_out.buff,
+					  ec->ep_bulk_out.urb->transfer_dma);
 		}
 		usb_free_urb(ec->ep_bulk_out.urb);
 		ec->ep_bulk_out.desc = NULL;
@@ -1056,9 +1067,9 @@ static void ec_delete(struct kref *kref)
 		/* deactivate dma buffer */
 		if (!ec->ep_int_in.buff) {
 			usb_free_coherent(ec->usb_dev,
-			                  ec->ep_int_in.buff_size,
-			                  ec->ep_int_in.buff,
-			                  ec->ep_int_in.urb->transfer_dma);
+					  ec->ep_int_in.buff_size,
+					  ec->ep_int_in.buff,
+					  ec->ep_int_in.urb->transfer_dma);
 		}
 		/* free urb for interrupt-in endpoint */
 		usb_free_urb(ec->ep_int_in.urb);
@@ -1080,7 +1091,8 @@ static int ec_open(struct inode *inode, struct file *file)
 	int sub_minor;
 	struct process_context *proc_context;
 
-	EC_INFO("Open file of ec device pid = %d <%s>\n", current->pid, current->comm);
+	EC_INFO("Open file of ec device pid = %d <%s>\n", current->pid,
+			current->comm);
 	mutex_lock(&usb_dev_mutex);
 	sub_minor = iminor(inode);
 	interface = usb_find_interface(&ec_usb_driver, sub_minor);
@@ -1113,9 +1125,9 @@ static int ec_open(struct inode *inode, struct file *file)
 	init_waitqueue_head(&proc_context->event);
 	/* register callbacks for this process */
 	proc_context->cb_data = msg_cb_add(&ec->cb_list,
-	                                   ec_usb_data_arrived_impl,
-	                                   ec_usb_signal_impl,
-	                                   proc_context);
+					   ec_usb_data_arrived_impl,
+					   ec_usb_signal_impl,
+					   proc_context);
 	if (!proc_context->cb_data) {
 		mutex_unlock(&usb_dev_mutex);
 		EC_ERR("Error when registering a callback!\n");
@@ -1141,7 +1153,7 @@ static int ec_release(struct inode *inode, struct file *file)
 	struct ec_dev *ec;
 	struct process_context *proc_context;
 
-	EC_INFO( "Release file of ec device\n" );
+	EC_INFO("Release file of ec device\n");
 	mutex_lock(&usb_dev_mutex);
 	proc_context = (struct process_context*)file->private_data;
 	ec = proc_context->ec;
@@ -1159,24 +1171,26 @@ static int ec_release(struct inode *inode, struct file *file)
  * ec_can_packet_read()
  */
 static ssize_t ec_can_packet_read(struct file *file,
-                                  char __user *user_data_p,
-                                  size_t count,
-                                  loff_t *unused)
+				  char __user *user_data_p,
+				  size_t count,
+				  loff_t *unused)
 {
 	register struct process_context *self_context;
 	int rv = 0;
 	u8 packet_size = (u8)count;
 
 	self_context = (struct process_context*)file->private_data;
-        /* DELETE OR NO? */
+	/* TODO: need to add a check: the device is disconnected or not */
 
 	if (ring_buff_is_empty(&self_context->ring_buff)) {
 		if (!(file->f_flags & O_NONBLOCK)) {
 			/* wait signal about receiving packet */
-			rv = hbp_filter_wait_packet_timeout(self_context, NULL, false);
+			rv = hbp_filter_wait_packet_timeout(self_context,
+								NULL, false);
 			if (rv) {
 				/* interruptible from signal */
-				EC_ERR( "Waiting has been interrupted! rv = %d\n", rv );
+				EC_ERR("Waiting has been interrupted! rv=%d\n",
+					rv);
 				return -ERESTARTSYS;
 			}
 		} else {
@@ -1194,11 +1208,11 @@ static ssize_t ec_can_packet_read(struct file *file,
 	if      (!rv)
 		rv = packet_size;
 	else if (rv == -EFAULT) {
-		EC_ERR( "Error when copying data to user space! rv = %d\n", rv );
+		EC_ERR("Error when copying data to user space! rv = %d\n", rv);
 		return  rv;
 	} else if (rv == -ENOBUFS) {
 		/* error with using ring buffer */
-		EC_ERR( "Error with using ring buffer! rv = %d\n", rv );
+		EC_ERR("Error with using ring buffer! rv = %d\n", rv);
 		return rv;
 	}
 	return rv;
@@ -1208,15 +1222,16 @@ static ssize_t ec_can_packet_read(struct file *file,
  * ec_can_packet_write()
  */
 static ssize_t ec_can_packet_write(struct file *file,
-                                   const char __user *user_data_p,
-                                   size_t count,
-                                   loff_t *unused)
+				   const char __user *user_data_p,
+				   size_t count,
+				   loff_t *unused)
 {
-	struct process_context *proc_context = (struct process_context*) file->private_data;
+	struct process_context *proc_context =
+				(struct process_context*) file->private_data;
 	u8 can_raw_packet[COU_PACKET_SIZE];
 	int rv;
 
-        /* DELETE OR NO? */
+	/* TODO: need to add a check: the device is disconnected or not */
 	if (!count)
 		return count;
 
@@ -1240,13 +1255,11 @@ static ssize_t ec_can_packet_write(struct file *file,
 static unsigned int ec_event_poll(struct file *file, poll_table *wait)
 {
 	struct process_context *proc_context =
-	    (struct process_context*)file->private_data;
+				(struct process_context*)file->private_data;
 	unsigned int mask = 0;
 
 	do {
-                /* DELETE OR NO?  {
-			mask = POLLERR;
-			break;   */
+		/* TODO: need to add a check: the device is disconnected */
 		if (!ring_buff_is_empty(&proc_context->ring_buff)) {
 			/*
 			 *  do not wait if there are packets in the ring buffer
@@ -1291,10 +1304,11 @@ static unsigned int ec_event_poll(struct file *file, poll_table *wait)
  */
 static int ec_msg_fasync(int fd, struct file *file, int mode)
 {
-	struct process_context *proc_context = (struct process_context *) file->private_data;
+	struct process_context *proc_context =
+			(struct process_context *)file->private_data;
 	struct ec_dev *ec = proc_context->ec;
 
-        /* DELETE OR NO? */
+	/* TODO: need to add a check: the device is disconnected */
 	/* create asynchronous event queue */
 	EC_INFO( "Call ec_msg_fasync: pid = %d\n", current->pid );
 	return fasync_helper(fd, file, mode, &ec->async_event);
@@ -1312,8 +1326,8 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	u8 cmd_packet[COU_PACKET_SIZE];
 
 	proc_context = (struct process_context *)file->private_data;
-        /* DELETE OR NO? */
 
+	/* TODO: need to add a check: the device is disconnected */
 	ec = proc_context->ec;
 	switch(cmd) {
 	case EC_CAN_CTRL:
@@ -1322,16 +1336,20 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case EC_SERV_TIMEOUT_SET:
 		if (copy_from_user(&rv, (void __user*)arg, sizeof(int))) {
 			/* error occurred while copying from user space */
-			EC_ERR( "Error with copying data from user space! rv = %d\n", rv );
+			EC_ERR("Error with copying data from"
+			       "user space! rv = %d\n",
+			       rv);
 			return  -EFAULT;
 		} else  rv = cou_srv_timeout_set(&ec->cou, rv);
 		break;
 
 	case EC_SERV_TIMEOUT_GET:
 		rv = cou_srv_timeout_get(&ec->cou);
-		if ( copy_to_user((void __user*)arg, &rv, sizeof(int)) ) {
+		if (copy_to_user((void __user*)arg, &rv, sizeof(int))) {
 			/* error occurred while copying to user space */
-			EC_ERR( "Error when copying data to user space! rv = %d\n", rv );
+			EC_ERR("Error when copying data"
+			       "to user space! rv = %d\n",
+			       rv);
 			return -EFAULT;
 		} else
 			rv = 0;
@@ -1339,10 +1357,14 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	case EC_HBP_CAN_FLTR_SET:
 		memset(cmd_packet,0,COU_PACKET_SIZE);
-		rv = copy_from_user(&cmd_packet, (void __user*)arg, COU_PACKET_SIZE);
+		rv = copy_from_user(&cmd_packet,
+				    (void __user*)arg,
+				    COU_PACKET_SIZE);
 		if ( rv ) {
 			/* error occurred while copying from user space */
-			EC_ERR( "Error with copying data from user space! rv = %d\n", rv );
+			EC_ERR("Error with copying data from"
+			       "user space! rv = %d\n",
+			       rv);
 			return  -EFAULT;
 		}
 
@@ -1352,8 +1374,8 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		
 		if (!(file->f_flags & O_NONBLOCK)) {
 			rv = hbp_filter_wait_packet_timeout(proc_context,
-			                                    cmd_packet,
-			                                    false);
+							    cmd_packet,
+							    false);
 		} else {
 			/* non blocking call */
 			rv = hbp_filter_passed(proc_context, cmd_packet);
@@ -1365,10 +1387,14 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		if (!rv) {
 			/* packet passed through filter */
-			rv = copy_to_user((void __user*)arg, &cmd_packet, COU_PACKET_SIZE);
+			rv = copy_to_user((void __user*)arg,
+					  &cmd_packet,
+					  COU_PACKET_SIZE);
 			if (rv) {
-				/* error occurred while copying to user space */
-				EC_ERR("Error when copying data to user space! rv = %d\n", rv);
+				/* err occurred while copying to user space */
+				EC_ERR("Error when copying data to"
+				       "user space! rv = %d\n",
+				       rv);
 				return -EFAULT;
 			}
 		}
@@ -1444,8 +1470,8 @@ static void ec_usb_interrupt_ep_handler(struct urb *urb)
  * ec_statistics_show()
  */
 static ssize_t ec_statistics_show(struct device *dev,
-                                  struct device_attribute *attr,
-                                  char *buf)
+				  struct device_attribute *attr,
+				  char *buf)
 {
 	struct usb_interface *interface = to_usb_interface(dev);
 	struct ec_dev *ec;
@@ -1461,9 +1487,9 @@ static ssize_t ec_statistics_show(struct device *dev,
  * ec_statistics_reset()
  */
 static ssize_t ec_statistics_reset(struct device* dev,
-                                   struct device_attribute* attr,
-                                   const char* buf,
-                                   size_t count)
+				   struct device_attribute* attr,
+				   const char* buf,
+				   size_t count)
 {
 	struct usb_interface *interface = to_usb_interface(dev);
 	struct ec_dev *ec;
@@ -1496,26 +1522,26 @@ static void print_ep_info(struct usb_endpoint_descriptor *ep_dscr)
  * ec_usb_ep_bulk_out_init()
  */
 static int ec_usb_ep_bulk_out_init(struct usb_device *usb_dev,
-                                   struct ec_usb_ep *ep,
-                                   struct usb_endpoint_descriptor *ep_descr)
+				   struct ec_usb_ep *ep,
+				   struct usb_endpoint_descriptor *ep_desc)
 {
 	ep->urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!ep->urb)
 		return -ENOMEM;
 
 	/* allocate buffer and configure dma */
-	ep->buff_size = ep_descr->wMaxPacketSize;
+	ep->buff_size = ep_desc->wMaxPacketSize;
 	ep->buff = (u8*)usb_alloc_coherent(usb_dev,
-	                                   ep->buff_size,
-	                                   GFP_KERNEL,
-	                                   &ep->urb->transfer_dma);
+					   ep->buff_size,
+					   GFP_KERNEL,
+					   &ep->urb->transfer_dma);
 	/* configure transfer pipe for bulk-out endpoint */
-	ep->pipe = usb_sndbulkpipe(usb_dev, ep_descr->bEndpointAddress);
+	ep->pipe = usb_sndbulkpipe(usb_dev, ep_desc->bEndpointAddress);
 	/* determine urb parameters */
 	ep->urb->dev = usb_dev;
 	ep->urb->transfer_buffer = ep->buff;
 	ep->urb->pipe = ep->pipe;
-	ep->desc = ep_descr;
+	ep->desc = ep_desc;
 	return 0;
 }
 
@@ -1523,20 +1549,20 @@ static int ec_usb_ep_bulk_out_init(struct usb_device *usb_dev,
  * ec_usb_ep_bulk_in_init()
  */
 static int ec_usb_ep_bulk_in_init(struct usb_device *usb_dev,
-                                  struct ec_usb_ep *ep,
-                                  struct usb_endpoint_descriptor *ep_descr)
+				  struct ec_usb_ep *ep,
+				  struct usb_endpoint_descriptor *ep_desc)
 {
 	/*
 	 *  the module needs to get information about the size
 	 *  of the hardware buffer on the usb side of the device
 	 */
-	ep->buff_size = ep_descr->wMaxPacketSize;
+	ep->buff_size = ep_desc->wMaxPacketSize;
 	ep->buff = (u8*)kzalloc(ep->buff_size, GFP_KERNEL);
 	if (!ep->buff)
 		return -ENOMEM;
 	/* configure recieve pipe */
-	ep->pipe = usb_rcvbulkpipe(usb_dev, ep_descr->bEndpointAddress);
-	ep->desc = ep_descr;
+	ep->pipe = usb_rcvbulkpipe(usb_dev, ep_desc->bEndpointAddress);
+	ep->desc = ep_desc;
 	return 0;
 }
 
@@ -1544,34 +1570,34 @@ static int ec_usb_ep_bulk_in_init(struct usb_device *usb_dev,
  * ec_usb_ep_bulk_in_init()
  */
 static int ec_usb_ep_interrupt_in_init(struct usb_device *usb_dev,
-                                       struct ec_usb_ep *ep,
-                                       struct usb_endpoint_descriptor *ep_descr)
+				       struct ec_usb_ep *ep,
+				       struct usb_endpoint_descriptor *ep_desc)
 {
 	ep->urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!ep->urb)
 		return -ENOMEM;
 
-	ep->buff_size = usb_endpoint_maxp(ep_descr);
+	ep->buff_size = usb_endpoint_maxp(ep_desc);
 	ep->buff = (u8*)usb_alloc_coherent(usb_dev,
-	                                   ep->buff_size,
-	                                   GFP_KERNEL,
-	                                   &ep->urb->transfer_dma);
+					   ep->buff_size,
+					   GFP_KERNEL,
+					   &ep->urb->transfer_dma);
 	if (!ep->buff)
 		return -ENOMEM;
 
-	ep->pipe = usb_rcvintpipe(usb_dev, ep_descr->bEndpointAddress);
+	ep->pipe = usb_rcvintpipe(usb_dev, ep_desc->bEndpointAddress);
 	/* create usb request block for interrupt in endpoint */
 	usb_fill_int_urb(ep->urb,
-	                 usb_dev,
-	                 ep->pipe,
-	                 ep->buff,
-	                 ep->buff_size,
-	                 ec_usb_interrupt_ep_handler,
-	                 ep,
-	                 ep_descr->bInterval);
+			 usb_dev,
+			 ep->pipe,
+			 ep->buff,
+			 ep->buff_size,
+			 ec_usb_interrupt_ep_handler,
+			 ep,
+			 ep_desc->bInterval);
 	/* use dma */
 	ep->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-	ep->desc = ep_descr;
+	ep->desc = ep_desc;
 	return 0;
 }
 
@@ -1579,7 +1605,7 @@ static int ec_usb_ep_interrupt_in_init(struct usb_device *usb_dev,
  * ec_probe()
  */
 static int ec_probe(struct usb_interface *interface,
-                    const struct usb_device_id *id)
+		    const struct usb_device_id *id)
 {
 	struct ec_dev *ec = NULL;
 	struct usb_host_interface *iface_desc;
@@ -1605,50 +1631,60 @@ static int ec_probe(struct usb_interface *interface,
 		ec->interface = interface;
 		iface_desc = interface->cur_altsetting;
 		dev_info(&interface->dev,
-		         "device have %d endpoints\n",
-		         iface_desc->desc.bNumEndpoints );
+			 "device have %d endpoints\n",
+			 iface_desc->desc.bNumEndpoints );
 
 		for(i = 0; i < iface_desc->desc.bNumEndpoints; ++i) {
 			/* get information about endpoint */
 			ep_descriptor = &iface_desc->endpoint[i].desc;
 			print_ep_info(ep_descriptor);
 			/* check builk-out ep */
-			if (usb_endpoint_is_bulk_out(ep_descriptor) && !ec->ep_bulk_out.desc) {
+			if (usb_endpoint_is_bulk_out(ep_descriptor) &&
+			    !ec->ep_bulk_out.desc) {
 				rv = ec_usb_ep_bulk_out_init(ec->usb_dev,
-				                             &ec->ep_bulk_out,
-				                             ep_descriptor);
+							     &ec->ep_bulk_out,
+							     ep_descriptor);
 				if (rv)
 					break;
-				dev_info(&interface->dev, "ep-bulk-out num: i = %d \n", i);
+				dev_info(&interface->dev,
+					 "ep-bulk-out num: i = %d \n",
+					 i);
 			}
 
 			/* check builk-in ep */
-			if (usb_endpoint_is_bulk_in(ep_descriptor) && !ec->ep_bulk_in.desc) {
+			if (usb_endpoint_is_bulk_in(ep_descriptor) &&
+			    !ec->ep_bulk_in.desc) {
 				rv = ec_usb_ep_bulk_in_init(ec->usb_dev,
-				                            &ec->ep_bulk_in,
-				                            ep_descriptor);
+							    &ec->ep_bulk_in,
+							    ep_descriptor);
 				if (rv)
 					break;
-				dev_info(&interface->dev, "ep-bulk-in num: i = %d \n", i);
+				dev_info(&interface->dev,
+					 "ep-bulk-in num: i = %d \n",
+					 i);
 			}
 
 			/* check builk-in ep */
-			if (usb_endpoint_is_int_in(ep_descriptor) && !ec->ep_int_in.desc) {
+			if (usb_endpoint_is_int_in(ep_descriptor) &&
+			    !ec->ep_int_in.desc) {
 				rv = ec_usb_ep_interrupt_in_init(ec->usb_dev,
-				                                 &ec->ep_int_in,
-				                                 ep_descriptor);
+								 &ec->ep_int_in,
+								 ep_descriptor);
 				if (rv)
 					break;
-				dev_info(&interface->dev, "ep-int-in num: i = %d \n", i);
+				dev_info(&interface->dev,
+					 "ep-int-in num: i = %d \n",
+					 i);
 			}
 
-		} /* endfor( i = 0; i < iface_desc->desc.bNumEndpoints; ++i ) */
+		} /* endfor(i = 0; i < iface_desc->desc.bNumEndpoints; ++i) */
 
 		if (!ec->ep_bulk_out.desc ||
 		    !ec->ep_bulk_in.desc ||
 		    !ec->ep_int_in.desc) {
 			dev_err(&interface->dev,
-			        "Some USB end-point was not correctly initialized!\n");
+				"Some USB end-point was not correctly"
+				"initialized!\n");
 			rv = -EIO;
 			break;
 		}
@@ -1657,15 +1693,15 @@ static int ec_probe(struct usb_interface *interface,
 		usb_set_intfdata(interface, ec);
 		rv = usb_register_dev(interface, &ec_class);
 		if (rv) {
-			/* something prevented us from registering this driver */
+			/* something prevented us from registering this drv */
 			dev_err(&interface->dev,
-			        "Not able to get a minor for this device\n");
+				"Not able to get a minor for this device\n");
 			usb_set_intfdata(interface, NULL);
 			break;
 		}
 		dev_info(&interface->dev,
-		         "Embedded Controller now attached to /dev/mcu%d\n",
-		         interface->minor);
+			 "Embedded Controller now attached to /dev/mcu%d\n",
+			 interface->minor);
 
 		/* can over usb protocol init */
 		init_completion(&ec->hold);
@@ -1676,7 +1712,8 @@ static int ec_probe(struct usb_interface *interface,
 		                                   "cou_stat_upd_process");
 		if (ec->cou.stat_proc == ERR_PTR(-ENOMEM)) {
 			/* error when creating a child thread */
-			EC_ERR( "Error when creating <cou_stat_upd_process> task!\n" );
+			EC_ERR("Error when creating"
+			       "<cou_stat_upd_process> task!\n");
 			rv = -ECHILD;
 			break;
 		}
@@ -1685,7 +1722,7 @@ static int ec_probe(struct usb_interface *interface,
 		                                   "bmc_cou_process");
 		if (ec->cou.pckt_proc == ERR_PTR(-ENOMEM)) {
 			/* error when creating a child thread */
-			EC_ERR( "Error when creating <cou_processing> task!\n" );
+			EC_ERR("Error when creating <cou_processing> task!\n");
 			rv = -ECHILD;
 			break;
 		}
@@ -1717,8 +1754,9 @@ static int ec_probe(struct usb_interface *interface,
 		rv = device_create_file(&interface->dev, &ec->dev_attr);
 		if ( rv ) {
 			dev_err(&interface->dev,
-			        "Failed to create the device file in the sysfs! rv = %d \n",
-			        rv);
+				"Failed to create the device file in"
+				"the sysfs! rv = %d \n",
+				rv);
 			break;
 		}
 		return 0;
