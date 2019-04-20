@@ -940,7 +940,7 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
 				usecs_to_jiffies(EC_RING_BUFFER_PAUSE_US);
 
 		EC_ERR("Ring buffer is full! Pause %d us!\n",
-				EC_RING_BUFFER_PAUSE_US);
+		       EC_RING_BUFFER_PAUSE_US);
 
 		rv = wait_event_interruptible_timeout(
 				context->event,
@@ -957,8 +957,8 @@ static int ec_usb_data_arrived_impl(void *usb_ep_buf,
 	rv = ring_buff_write_packet(&context->ring_buff, usb_ep_buf, size);
 	if (rv == -ENOBUFS) {
 		/* packet ring buffer is full */
-		EC_WARN("Write packet to local context buffer is failed."
-				"Ring buffer is full!\n");
+		EC_WARN("Write packet to local context buffer is failed. "
+			"Ring buffer is full!\n");
 	}
 	SND_MSG_EVENT(context, RECEIVE_PACKET);
 	wake_up_interruptible(&context->event);
@@ -1239,7 +1239,8 @@ static ssize_t ec_can_packet_write(struct file *file,
 	rv = copy_from_user(&can_raw_packet, user_data_p, count);
 	if (rv) {
 		/* error occurred while copying from user space */
-		EC_ERR( "Error with copying data from user space! rv = %d\n", rv );
+		EC_ERR("Error with copying data from user space! rv = %d\n",
+		       rv);
 		return -EFAULT;
 	}
 	rv = cou_packet_engine(proc_context->ec, &can_raw_packet, count, 0);
@@ -1283,7 +1284,8 @@ static unsigned int ec_event_poll(struct file *file, poll_table *wait)
 
 	if (mask == POLLERR) {
 		/* device is not detected */
-		EC_ERR( "Device is not detected! Error with reading private data!\n" );
+		EC_ERR("Device is not detected! "
+		       "Error with reading private data!\n");
 		return  POLLERR | POLLHUP;
 	}
 
@@ -1336,7 +1338,7 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case EC_SERV_TIMEOUT_SET:
 		if (copy_from_user(&rv, (void __user*)arg, sizeof(int))) {
 			/* error occurred while copying from user space */
-			EC_ERR("Error with copying data from"
+			EC_ERR("Error with copying data from "
 			       "user space! rv = %d\n",
 			       rv);
 			return  -EFAULT;
