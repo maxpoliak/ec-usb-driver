@@ -53,6 +53,7 @@ enum {
 	GET_TIMEOUT_ID,
 	SET_TIMEOUT_ID,
 	FLTR_HDR_ID,
+	EC_USB_RESET_ID,
 	MAX_LIMIT_EC_GROUP
 };
 
@@ -60,6 +61,7 @@ enum {
 #define EC_SERV_TIMEOUT_GET	_IOR(EC_USB_MINOR, GET_TIMEOUT_ID, int*)
 #define EC_SERV_TIMEOUT_SET	_IOWR(EC_USB_MINOR, SET_TIMEOUT_ID, int)
 #define EC_HBP_CAN_FLTR_SET	_IOWR(EC_USB_MINOR, FLTR_HDR_ID, u32)
+#define EC_USB_RESET		_IOWR(EC_USB_MINOR, EC_USB_RESET_ID, int)
 
 /* Macro for system events */
 #define SND_MSG_EVENT(c, event)	set_bit((int)event, (void*)&c->flags)
@@ -1043,6 +1045,29 @@ static int hbp_filter_wait_packet_timeout(struct process_context *self,
 }
 
 /**
+ * ec_usb_hot_reset() - Use this function to reset the USB interface
+ *                      from the host to the microcontroller
+ *
+ * @ec: ec control structure
+ */
+static int ec_usb_hot_reset(struct ec_dev *ec)
+{
+	struct usb_interface *ec_usb_iface = ec->interface;
+	EC_INFO("Reset USB interface to the controller! ...\n");
+
+	/*
+	 * Reset EC USB device from an atomic context
+	 * where usb_reset_device won't work (as it blocks).
+	 * There is no no need to lock/unlock the reset_ws as
+	 * schedule_work does its own.
+	 */
+	usb_queue_reset_device(ec_usb_iface);
+
+	EC_INFO("...Done!\n");
+	return 0;
+}
+
+/**
  * ec_delete()
  */
 static void ec_delete(struct kref *kref)
@@ -1400,6 +1425,10 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				return -EFAULT;
 			}
 		}
+		break;
+
+	case EC_USB_RESET:
+		ec_usb_hot_reset(ec);
 		break;
 
 	default:
