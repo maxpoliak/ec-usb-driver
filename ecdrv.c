@@ -284,7 +284,6 @@ struct ec_usb_ep {
  *
  * @usb_dev:     usb device data
  * @interface:   the interface for this device
- * @dev_attr:    attr for sysfs file of ec dev
  * @kref:        reference counter
  * @ep_bulk_in:  data structure of the bulk-in usb endpoint
  * @ep_bulk_out: data structure of the bulk-out usb endpoint
@@ -297,7 +296,6 @@ struct ec_usb_ep {
 struct ec_dev {
 	struct usb_device *usb_dev;
 	struct usb_interface *interface;
-	struct device_attribute dev_attr;
 	struct kref kref;
 	struct completion hold;
 	struct ec_usb_ep ep_bulk_in;
@@ -1533,6 +1531,16 @@ static ssize_t ec_statistics_reset(struct device* dev,
 	return count;
 }
 
+/*
+ * ec_sysfs_statistics
+ */
+static struct device_attribute ec_sysfs_statistics = {
+	.attr.name = "statistic",
+	.attr.mode = S_IRUGO | S_IWUSR,
+	.show = ec_statistics_show,
+	.store = ec_statistics_reset,
+};
+
 /**
  * print_ep_info()
  */
@@ -1783,14 +1791,9 @@ static int ec_probe(struct usb_interface *interface,
 			break;
 		}
 
-		/* set new attr for reading statistic */
-		ec->dev_attr.attr.name = "statistic";
-		ec->dev_attr.attr.mode = S_IRUGO | S_IWUSR;
-		ec->dev_attr.show = ec_statistics_show;
-		ec->dev_attr.store = ec_statistics_reset;
 		/* create device attribute files */
-		rv = device_create_file(&interface->dev, &ec->dev_attr);
-		if ( rv ) {
+		rv = device_create_file(&interface->dev, &ec_sysfs_statistics);
+		if (rv) {
 			dev_err(&interface->dev,
 				"Failed to create the device file in"
 				"the sysfs! rv = %d \n",
@@ -1817,7 +1820,7 @@ static void ec_disconnect(struct usb_interface *interface)
 	dev_info(&interface->dev, "ec_disconnect!\n");
 	/* remove device file from sysfs */
 	ec = (struct ec_dev*) usb_get_intfdata(interface);
-	device_remove_file(&interface->dev, &ec->dev_attr);
+	device_remove_file(&interface->dev, &ec_sysfs_statistics);
 	/* stop all threads */
 	if (ec->cou.pckt_proc) kthread_stop(ec->cou.pckt_proc);
 	if (ec->cou.stat_proc) kthread_stop(ec->cou.stat_proc);
