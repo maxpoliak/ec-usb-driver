@@ -1496,11 +1496,11 @@ static void ec_usb_interrupt_ep_handler(struct urb *urb)
 }
 
 /**
- * ec_statistics_show()
+ * ec_sysfs_statistics_show()
  */
-static ssize_t ec_statistics_show(struct device *dev,
-				  struct device_attribute *attr,
-				  char *buf)
+static ssize_t ec_sysfs_statistics_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
 {
 	struct usb_interface *interface = to_usb_interface(dev);
 	struct ec_dev *ec;
@@ -1513,12 +1513,12 @@ static ssize_t ec_statistics_show(struct device *dev,
 }
 
 /**
- * ec_statistics_reset()
+ * ec_sysfs_statistics_reset()
  */
-static ssize_t ec_statistics_reset(struct device* dev,
-				   struct device_attribute* attr,
-				   const char* buf,
-				   size_t count)
+static ssize_t ec_sysfs_statistics_reset(struct device* dev,
+					 struct device_attribute* attr,
+					 const char* buf,
+					 size_t count)
 {
 	struct usb_interface *interface = to_usb_interface(dev);
 	struct ec_dev *ec;
@@ -1537,8 +1537,8 @@ static ssize_t ec_statistics_reset(struct device* dev,
 static struct device_attribute ec_sysfs_statistics = {
 	.attr.name = "statistic",
 	.attr.mode = S_IRUGO | S_IWUSR,
-	.show = ec_statistics_show,
-	.store = ec_statistics_reset,
+	.show = ec_sysfs_statistics_show,
+	.store = ec_sysfs_statistics_reset,
 };
 
 /**
