@@ -1544,6 +1544,61 @@ static struct device_attribute ec_sysfs_statistics = {
 };
 
 /**
+ * ec_sysfs_usb_hot_reset() - reset the ec device by writing
+ *                            "1" value to the "hreset" file
+ *                            in the sysfs
+ * Returns:
+ * count   - success;
+ * -ENODEV - dev isn`t found;
+ */
+static ssize_t ec_sysfs_usb_hot_reset(struct device* dev,
+				      struct device_attribute* attr,
+				      const char* buf,
+				      size_t count)
+{
+	struct usb_interface *interface = to_usb_interface(dev);
+	int rv = -ENODEV;
+	struct ec_dev *ec;
+
+	if (!interface)
+		return rv;
+
+	dev_info(dev, "Hot reset!\n");
+	ec = (struct ec_dev *)usb_get_intfdata(interface);
+
+	/* reset device */
+	ec_usb_hot_reset(ec);
+
+	return count;
+}
+
+/**
+ * ec_sysfs_hot_reset
+ */
+static struct device_attribute ec_sysfs_hot_reset = {
+	.attr.name = "hreset",
+	.attr.mode = S_IWUSR,
+	.show = NULL,
+	.store = ec_sysfs_usb_hot_reset,
+};
+
+/**
+ * ec_sysfs_dev_attrs[]
+ */
+static struct attribute *ec_sysfs_dev_attrs[] = {
+	&ec_sysfs_statistics.attr,
+	&ec_sysfs_hot_reset.attr,
+	NULL
+};
+
+/**
+ * ec_sysfs_dev_attr_grp
+ */
+static const struct attribute_group ec_sysfs_dev_attr_grp = {
+	.attrs = ec_sysfs_dev_attrs,
+};
+
+/**
  * print_ep_info()
  */
 static void print_ep_info(struct usb_endpoint_descriptor *ep_dscr)
@@ -1793,11 +1848,11 @@ static int ec_probe(struct usb_interface *interface,
 			break;
 		}
 
-		/* create device attribute files */
-		rv = device_create_file(&interface->dev, &ec_sysfs_statistics);
+		/* create device attribute files in sysfs */
+		rv = sysfs_create_group(&interface->dev.kobj, &ec_sysfs_dev_attr_grp);
 		if (rv) {
 			dev_err(&interface->dev,
-				"Failed to create the device file in"
+				"Failed to create the device files in"
 				"the sysfs! rv = %d \n",
 				rv);
 			break;
@@ -1820,9 +1875,11 @@ static void ec_disconnect(struct usb_interface *interface)
 	int ec_minor = interface->minor;
 
 	dev_info(&interface->dev, "ec_disconnect!\n");
-	/* remove device file from sysfs */
 	ec = (struct ec_dev*) usb_get_intfdata(interface);
-	device_remove_file(&interface->dev, &ec_sysfs_statistics);
+
+	/* remove device file from sysfs */
+	sysfs_remove_group(&interface->dev.kobj, &ec_sysfs_dev_attr_grp);
+
 	/* stop all threads */
 	if (ec->cou.pckt_proc) kthread_stop(ec->cou.pckt_proc);
 	if (ec->cou.stat_proc) kthread_stop(ec->cou.stat_proc);
