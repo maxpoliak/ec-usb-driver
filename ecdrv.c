@@ -1073,8 +1073,8 @@ static void ec_delete(struct kref *kref)
 	struct ec_dev *ec  = TO_EC_DEV(kref);
 
 	EC_INFO("Delete device from devfs table!...");
-	if (!ec->ep_bulk_out.desc) {
-		if (!ec->ep_bulk_out.buff) {
+	if (ec->ep_bulk_out.desc) {
+		if (ec->ep_bulk_out.buff) {
 			/* free up allocated buffer */
 			usb_free_coherent(ec->usb_dev,
 					  ec->ep_bulk_out.buff_size,
@@ -1085,9 +1085,11 @@ static void ec_delete(struct kref *kref)
 		ec->ep_bulk_out.desc = NULL;
 	}
 
-	if (!ec->ep_int_in.desc) {
+	ec->ep_bulk_in.desc = NULL;
+
+	if (ec->ep_int_in.desc) {
 		/* deactivate dma buffer */
-		if (!ec->ep_int_in.buff) {
+		if (ec->ep_int_in.buff) {
 			usb_free_coherent(ec->usb_dev,
 					  ec->ep_int_in.buff_size,
 					  ec->ep_int_in.buff,
