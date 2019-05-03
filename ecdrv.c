@@ -342,7 +342,7 @@ static struct usb_driver ec_usb_driver;
  *
  * Returns true if the circular buffer is empty.
  */
-static bool ring_buff_is_empty(ring_pckt_buff_t *ring_buff )
+static bool ring_buff_is_empty(ring_pckt_buff_t *ring_buff)
 {
 	return ring_buff->tail == ring_buff->head;
 }
@@ -354,7 +354,7 @@ static bool ring_buff_is_empty(ring_pckt_buff_t *ring_buff )
  *
  * Returns true if the circular buffer is full
  */
-static bool ring_buff_is_full(ring_pckt_buff_t* ring_buff )
+static bool ring_buff_is_full(ring_pckt_buff_t* ring_buff)
 {
 	if (!CIRC_SPACE(ring_buff->head, ring_buff->tail, CIRCULAR_NUM_ENTRY))
 		return true;
@@ -466,7 +466,7 @@ static int ring_buff_read_packet(ring_pckt_buff_t *ring_buff,
  */
 static int ring_buff_user_read_packet(ring_pckt_buff_t *ring_buff,
 				      void __user *read_to_user,
-				      u8 *count )
+				      u8 *count)
 {
 	int rv = 0;
 	if (ring_buff_is_empty(ring_buff)) {
@@ -622,7 +622,7 @@ static int cou_packet_rcv_process(void *arg)
 				  ec->ep_bulk_in.buff_size,
 				  &size,
 				  timeout);
-		switch( rv ) {
+		switch(rv) {
 		case 0:
 			if ((size > COU_PACKET_SIZE) ||
 			    (size < COU_ATTR_HEADER_SIZE)) {
@@ -674,7 +674,7 @@ static int cou_packet_rcv_process(void *arg)
 			EC_ERR("unknown status received: rv = %d\n", rv);
 			break;
 
-		} /* end switch( rv ) */
+		} /* end switch(rv) */
 
 	} /* end while( !kthread_should_stop() ... */
 
@@ -1337,7 +1337,7 @@ static int ec_msg_fasync(int fd, struct file *file, int mode)
 
 	/* TODO: need to add a check: the device is disconnected */
 	/* create asynchronous event queue */
-	EC_INFO( "Call ec_msg_fasync: pid = %d\n", current->pid );
+	EC_INFO("Call ec_msg_fasync: pid = %d\n", current->pid);
 	return fasync_helper(fd, file, mode, &ec->async_event);
 }
 
@@ -1387,7 +1387,7 @@ static long ec_cmd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		rv = copy_from_user(&cmd_packet,
 				    (void __user*)arg,
 				    COU_PACKET_SIZE);
-		if ( rv ) {
+		if (rv) {
 			/* error occurred while copying from user space */
 			EC_ERR("Error with copying data from"
 			       "user space! rv = %d\n",
@@ -1492,7 +1492,7 @@ static void ec_usb_interrupt_ep_handler(struct urb *urb)
 	rv = usb_submit_urb(urb, GFP_ATOMIC);
 	if (rv) {
 		/* error with transmiting URB */
-		EC_ERR( "usb_submit_urb failed: %d\n", rv );
+		EC_ERR("usb_submit_urb failed: %d\n", rv);
 	}
 	EC_INFO(": ec_usb_interrupt_ep_handler(): exit!\n");
 }
@@ -1677,7 +1677,7 @@ static int ec_probe(struct usb_interface *interface,
 		iface_desc = interface->cur_altsetting;
 		dev_info(&interface->dev,
 			 "device have %d endpoints\n",
-			 iface_desc->desc.bNumEndpoints );
+			 iface_desc->desc.bNumEndpoints);
 
 		for(i = 0; i < iface_desc->desc.bNumEndpoints; ++i) {
 			/* get information about endpoint */
@@ -1784,7 +1784,7 @@ static int ec_probe(struct usb_interface *interface,
 
 		/* transmit interrupt-in urb to usb stack */
 		rv = usb_submit_urb(ec->ep_int_in.urb, GFP_KERNEL);
-		if ( rv ) {
+		if (rv) {
 			/* error with transfer */
 			rv = -EIO;
 			dev_err(&interface->dev,
